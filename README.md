@@ -25,7 +25,7 @@ To reveal, users must provide their seed. Reveal is a permissionless instruction
 After all commitments have been revealed or the clock slot has passed the deadline specified by the variable creator, the value can be finalized and used. To finalize, the variable account provides a `finalize()` function which creates a keccak hash of the digest buffer. Note that if no commitments were revealed, the initial digest that the variable was created with will be used. Protocols that use Entropy for random number generation should implement their own independent security checks using the properties on the variable account if, for example, they require a minimum number of commitments or reveal threshold. 
 
 ### Close
-After a variable has been used, its account and all unrevealed commitments can be cleaned up via the close instruction. All rent will automatically be returned to the accounts which initially openned the accounts and paid for the rent.
+After a variable has been used, its account and all unrevealed commitments can be cleaned up via the close instruction. All deposits on unrevealed commitments will be sent to the variable's fee collector. All rent will automatically be returned to the accounts which openned them.
 
         
 ## API

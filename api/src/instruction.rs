@@ -13,6 +13,7 @@ pub enum EntropyInstruction {
 #[derive(Clone, Copy, Debug, Pod, Zeroable)]
 pub struct Open {
     pub id: [u8; 8],
+    pub deposit: u64,
     pub last_commit_at: u64,
     pub last_reveal_at: u64,
     pub close_at: u64,

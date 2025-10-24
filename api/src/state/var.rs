@@ -10,8 +10,14 @@ pub struct Var {
     /// The creator of the variable.
     pub authority: Pubkey,
 
+    /// The amount of SOL that must be deposited per commitment, returned only if revealed.
+    pub deposit: u64,
+
     /// The digest of the variable.
     pub digest: [u8; 32],
+
+    /// The account which should receive the deposits of unrevealed commits.
+    pub fee_collector: Pubkey,
 
     /// A unique identifier for the variable.
     pub id: u64,

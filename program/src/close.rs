@@ -4,7 +4,7 @@ use steel::*;
 pub fn process_close(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResult {
     // Load accounts.
     let clock = Clock::get()?;
-    let [signer_info, commitment_info, commitment_authority_info, var_info, var_authority_info, system_program] =
+    let [signer_info, commitment_info, commitment_authority_info, fee_collector_info, var_info, var_authority_info, system_program] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -14,10 +14,22 @@ pub fn process_close(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResul
 
     // Close var account.
     if !var_info.data_is_empty() {
-        var_info
+        // Validate var.
+        let var = var_info
             .as_account_mut::<Var>(&entropy_api::ID)?
             .assert_mut(|v| v.authority == *var_authority_info.key)?
             .assert_mut(|v| clock.slot < v.close_at)?;
+
+        // Payout fee collector
+        if var.reveal_count < var.commit_count {
+            fee_collector_info
+                .is_writable()?
+                .has_address(&var.fee_collector)?;
+            let fees = (var.commit_count - var.reveal_count) * var.deposit;
+            var_info.send(fees, &fee_collector_info);
+        }
+
+        // Close var account.
         var_info.close(var_authority_info)?;
     }
 

@@ -36,6 +36,9 @@ pub fn process_commit(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResul
         commitment.var = *var_info.key;
         commitment.hash = hash;
 
+        // Make deposit.
+        var_info.collect(var.deposit, &signer_info)?;
+
         // Update var.
         var.commit_count += 1;
     } else {

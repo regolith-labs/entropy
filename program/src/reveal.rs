@@ -8,13 +8,13 @@ pub fn process_reveal(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResul
     let seed = args.seed;
 
     // Load accounts.
-    let [signer_info, commitment_info, var_info, system_program] = accounts else {
+    let [signer_info, authority_info, commitment_info, var_info, system_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
     signer_info.is_signer()?;
     let commitment = commitment_info
         .as_account_mut::<Commitment>(&entropy_api::ID)?
-        .assert_mut(|c| c.authority == *signer_info.key)?
+        .assert_mut(|c| c.authority == *authority_info.key)?
         .assert_mut(|c| c.var == *var_info.key)?;
     let var = var_info
         .as_account_mut::<Var>(&entropy_api::ID)?
@@ -33,6 +33,12 @@ pub fn process_reveal(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResul
 
     // Update the var.
     var.reveal_count += 1;
+
+    // Return deposits.
+    var_info.send(var.deposit, &authority_info);
+
+    // Close commitment account.
+    commitment_info.close(authority_info)?;
 
     Ok(())
 }

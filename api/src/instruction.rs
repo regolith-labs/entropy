@@ -5,18 +5,25 @@ use steel::*;
 pub enum EntropyInstruction {
     Open = 0,
     Close = 1,
-    Commit = 2,
+    Next = 2,
     Reveal = 4,
+    Sample = 5,
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Pod, Zeroable)]
 pub struct Open {
-    pub id: [u8; 8],
-    pub deposit: u64,
-    pub last_commit_at: u64,
-    pub last_reveal_at: u64,
-    pub close_at: u64,
+    /// The commit provided by Entropy provider.
+    pub commit: [u8; 32],
+
+    /// Whether or not the Entropy provider should automatically sample the slot hash.
+    pub is_auto: u64,
+
+    /// The number of random variables to sample.
+    pub samples: u64,
+
+    /// The slot at which the variable should sample the slothash.
+    pub end_at: u64,
 }
 
 #[repr(C)]
@@ -25,8 +32,8 @@ pub struct Close {}
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Pod, Zeroable)]
-pub struct Commit {
-    pub hash: [u8; 32],
+pub struct Next {
+    pub end_at: u64,
 }
 
 #[repr(C)]
@@ -35,7 +42,12 @@ pub struct Reveal {
     pub seed: [u8; 32],
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+pub struct Sample {}
+
 instruction!(EntropyInstruction, Open);
 instruction!(EntropyInstruction, Close);
-instruction!(EntropyInstruction, Commit);
+instruction!(EntropyInstruction, Next);
 instruction!(EntropyInstruction, Reveal);
+instruction!(EntropyInstruction, Sample);

@@ -1253,6 +1253,7 @@ name = "entropy-program"
 version = "0.1.0"
 dependencies = [
  "base64 0.21.7",
+ "bincode",
  "entropy-api",
  "rand 0.8.5",
  "solana-program",

@@ -3,42 +3,33 @@ use steel::*;
 
 pub fn process_reveal(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResult {
     // Parse args.
-    let clock = Clock::get()?;
     let args = Reveal::try_from_bytes(data)?;
     let seed = args.seed;
 
     // Load accounts.
-    let [signer_info, authority_info, commitment_info, var_info, system_program] = accounts else {
+    let clock = Clock::get()?;
+    let [signer_info, var_info] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
     signer_info.is_signer()?;
-    let commitment = commitment_info
-        .as_account_mut::<Commitment>(&entropy_api::ID)?
-        .assert_mut(|c| c.authority == *authority_info.key)?
-        .assert_mut(|c| c.var == *var_info.key)?;
     let var = var_info
         .as_account_mut::<Var>(&entropy_api::ID)?
-        .assert_mut(|v| clock.slot < v.last_reveal_at)?;
-    system_program.is_program(&system_program::ID)?;
+        .assert_mut_msg(|v| clock.slot >= v.end_at, "Not ready to reveal")?
+        .assert_mut_msg(|v| v.slot_hash != [0; 32], "Slot hash not sampled")?
+        .assert_mut_msg(|v| v.value == [0; 32], "Value is already set")?;
 
     // Validate the seed.
-    if !commitment.is_valid(seed) {
-        return Err(ProgramError::InvalidInstructionData);
+    if !var.is_valid(seed) {
+        return Err(trace("Invalid seed", ProgramError::InvalidInstructionData));
     }
 
-    // Update the digest.
-    for (i, byte) in seed.iter().enumerate() {
-        var.digest[i] ^= byte;
-    }
+    // Record the revealed seed.
+    var.seed = seed;
 
-    // Update the var.
-    var.reveal_count += 1;
-
-    // Return deposits.
-    var_info.send(var.deposit, &authority_info);
-
-    // Close commitment account.
-    commitment_info.close(authority_info)?;
+    // Finalize the value.
+    var.value =
+        solana_program::keccak::hashv(&[&var.slot_hash, &var.seed, &var.samples.to_le_bytes()])
+            .to_bytes();
 
     Ok(())
 }

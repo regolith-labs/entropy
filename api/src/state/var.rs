@@ -1,7 +1,5 @@
 use steel::*;
 
-use crate::error::EntropyError;
-
 use super::EntropyAccount;
 
 #[repr(C)]
@@ -10,40 +8,44 @@ pub struct Var {
     /// The creator of the variable.
     pub authority: Pubkey,
 
-    /// The amount of SOL that must be deposited per commitment, returned only if revealed.
-    pub deposit: u64,
+    /// The commit provided by Entropy provider.
+    pub commit: [u8; 32],
 
-    /// The digest of the variable.
-    pub digest: [u8; 32],
+    /// The revealed seed.
+    pub seed: [u8; 32],
 
-    /// The account which should receive the deposits of unrevealed commits.
-    pub fee_collector: Pubkey,
+    /// The slot hash
+    pub slot_hash: [u8; 32],
 
-    /// A unique identifier for the variable.
-    pub id: u64,
+    /// The current value of the variable.
+    pub value: [u8; 32],
 
-    /// The timestamp after which commits are no longer accepted.
-    pub last_commit_at: u64,
+    /// The number of random variables remaining to be sampled.
+    pub samples: u64,
 
-    /// The timestamp after which reveals are no longer accepted.
-    pub last_reveal_at: u64,
+    /// Whether or not the Entropy provider should automatically sample the slot hash.
+    pub is_auto: u64,
 
-    /// The timestamp after which the variable account may be closed.
-    pub close_at: u64,
+    /// The slot at which the variable was opened.
+    pub start_at: u64,
 
-    /// The number of commits submitted.
-    pub commit_count: u64,
-
-    /// The number of reveals submitted.
-    pub reveal_count: u64,
+    /// The slot at which the variable should sample the slothash.
+    pub end_at: u64,
 }
 
 impl Var {
-    pub fn finalize(&self, clock: &Clock) -> Result<[u8; 32], EntropyError> {
-        if self.reveal_count < self.commit_count && clock.slot < self.last_reveal_at {
-            return Err(EntropyError::IncompleteDigest);
+    pub fn is_valid(&self, seed: [u8; 32]) -> bool {
+        if self.slot_hash == [0; 32] {
+            return false;
         }
-        Ok(solana_program::keccak::hash(self.digest.as_ref()).to_bytes())
+        if self.value != [0; 32] {
+            return false;
+        }
+        if self.samples == 0 {
+            return false;
+        }
+        let expected_commit = solana_program::keccak::hash(&seed).to_bytes();
+        expected_commit == self.commit
     }
 }
 

@@ -1,33 +1,16 @@
 # Entropy [WIP]
 
-**Entropy** is a provably-fair random number generation protocol for Solana. It uses an N-party commit-reveal scheme to generate random numbers onchain in a secure and cost-effective way. 
+**Entropy** is a provably-fair random number generation protocol for Solana. It uses an commit-reveal scheme paired with slothash sampling strategy to generate random numbers onchain in a secure and cost-effective way.
 
 ## How it works
 
-### Open
-Anyone can permissionlessly open a `Var` account to launch a new random variable. Upon opening, the creator should specify the following properties:
-- `id`: a unique identifying ID for the variable
-- `deposit`: the amount of SOL committers must deposit, to be returned only upon revealing their seed
-- `fee_collector`: the account which should collect deposits from unrevealed commits
-- `last_commit_at`: the slot after which no new commits are accepted
-- `last_reveal_at`: the slot after which no new reveals are accepted
-- `close_at`: the slot after which the var can be closed
+Users create a new variables by pinging the Entropy API offchain and receiving back a signed transaction from the provider to open a `Var` account. Users must sign this transaction and submit it to the chain to open the account. On the backend, the Entropy API will generate a set of N random numbers by recursively hashing a psuedorandom number in a loop and returning the last value in the set. The number N will represent the number of values the variable will take on over its lifetime.
 
-The variable's digest will automatically be seeded by a keccak hash of the creator's account address, the variable id, and current clock slot.
+The variable will be initialized with the commit provided by the Entropy API and the ending slot provided by the user. When that slot comes due, users should call `Sample` to sample the slothash from the chain and record it on the variable. Only after the slothash has been sampled, the Entropy API will make the seed value available via the API. Users can fetch this value and then submit it via the `Reveal` instruction to create the finalized value. If the variable is initialzied with `is_auto = true`, then the Entropy API will automatically sample the slothash and reveal the seed. The variable can then be read by any onchain program via `value` property on the variable account.
 
-### Commit
-Any user can permissionlessly commit to an open variable to participate in random number generation. To commit, users should generate a random number and store is securely. This value is known as the "seed" and should be kept secret until it is deemed safe to reveal. Safety will depend on the context in which the variable is being used. Users should then hash the seed and submit the hash via a commit instruction. This will open a `Commitment` account to record the committed hash and make a deposit, in SOL, of the value specified by the variable. Since the entropy protocol supports permissionless N-party participation, this deposit acts as a deterence to users who might try to influence the outcome by committing many values and selectively revealing only after other participants have revealed. For all any commitement that is not revealed by the variable's deadline, the deposit will be lost and sent to the variable's fee collector.
+The variable will then wait for the user to call `Next` to reset the variable for its next value. The slothash and finalized value will be reset to zero, and the recorded seed from the last value will become the commit for the next value. In this way, the Entropy API is "locked in" to all future values and cannot selectively manipulate specific outcomes. Likewise, the slothosh sampled at the ending slot is unknown to the Entropy API at the time of openning the variable, thus the Entropy service provided cannot know the results of future outcomes. Since the Entropy provider keeps future seed values secret until reveal, the validators who provide slothashes cannot favorably manipulate the outcome of the result either.
 
-### Reveal
-To reveal, users must provide their seed. Reveal is a permissionless instruction allowing anyone to call it for any other user, simplifying UI flows for users participating in web applications. The host of the application can program their app to collect seeds at the appropriate time and batch submit them on behalf of users. For trustless setups, users can chose to reveal their seed independently. Upon receiving a seed, the protocol will hash it and verify the result matches the hash provided in the commit step. If so, the reveal will be recorded by XOR'ing the seed value into the existing digest. The deposit will be automatically returned to the committer, and the commmitment account will be closed. 
 
-### Finalize
-After all commitments have been revealed or the clock slot has passed the deadline specified by the variable creator, the value can be finalized and used. To finalize, the variable account provides a `finalize()` function which creates a keccak hash of the digest buffer. Note that if no commitments were revealed, the initial digest that the variable was created with will be used. Protocols that use Entropy for random number generation should implement their own independent security checks using the properties on the variable account if, for example, they require a minimum number of commitments or reveal threshold. 
-
-### Close
-After a variable has been used, its account and all unrevealed commitments can be cleaned up via the close instruction. All deposits on unrevealed commitments will be sent to the variable's fee collector. All rent will automatically be returned to the accounts which paid to open them.
-
-        
 ## API
 - [`Consts`](api/src/consts.rs) – Program constants.
 - [`Error`](api/src/error.rs) – Custom program errors.
@@ -35,13 +18,13 @@ After a variable has been used, its account and all unrevealed commitments can b
 - [`Instruction`](api/src/instruction.rs) – Declared instructions.
 
 ## Instructions
-- [`Open`](program/src/open.rs) – Opens a new var.
-- [`Close`](program/src/close.rs) – Closes a var and/or commitment account.
-- [`Commit`](program/src/commit.rs) – Commits a hash for secure random number generation.
-- [`Reveal`](program/src/reveal.rs) – Reveals a seed and updates the digest.
+- [`Open`](program/src/open.rs) – Opens a new variable.
+- [`Close`](program/src/close.rs) – Closes a variable account.
+- [`Next`](program/src/next.rs) - Moves a variable to the next value.
+- [`Reveal`](program/src/reveal.rs) – Reveals a seed.
+- [`Sample`](program/src/sample.rs) - Samples the slothash.
 
 ## State
-- [`Commitment`](api/src/state/commitment.rs) – Commitment holds onto a commit hash for a variable.
 - [`Variable`](api/src/state/variable.rs) – Variable tracks a unique random variable.
 
 ## Get started

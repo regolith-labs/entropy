@@ -1,12 +1,14 @@
 mod close;
-mod commit;
+mod next;
 mod open;
 mod reveal;
+mod sample;
 
 use close::*;
-use commit::*;
+use next::*;
 use open::*;
 use reveal::*;
+use sample::*;
 
 use entropy_api::prelude::*;
 use steel::*;
@@ -21,8 +23,9 @@ pub fn process_instruction(
     match ix {
         EntropyInstruction::Open => process_open(accounts, data)?,
         EntropyInstruction::Close => process_close(accounts, data)?,
-        EntropyInstruction::Commit => process_commit(accounts, data)?,
+        EntropyInstruction::Next => process_next(accounts, data)?,
         EntropyInstruction::Reveal => process_reveal(accounts, data)?,
+        EntropyInstruction::Sample => process_sample(accounts, data)?,
     }
 
     Ok(())

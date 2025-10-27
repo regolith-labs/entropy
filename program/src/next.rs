@@ -21,6 +21,12 @@ pub fn process_next(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResult 
         .assert_mut_msg(|v| v.value != [0; 32], "Value is not finalized")?
         .assert_mut_msg(|v| v.samples > 0, "No samples remaining")?;
 
+    // Validate the end at slot.
+    assert!(
+        end_at > clock.slot,
+        "End at must be greater than current slot"
+    );
+
     // Update the var for the next value.
     var.commit = var.seed;
     var.seed = [0; 32];

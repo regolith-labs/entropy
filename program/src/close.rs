@@ -3,7 +3,6 @@ use steel::*;
 
 pub fn process_close(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResult {
     // Load accounts.
-    let clock = Clock::get()?;
     let [signer_info, var_info, system_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };

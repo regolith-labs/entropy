@@ -2,7 +2,7 @@ use entropy_api::prelude::*;
 use solana_program::slot_hashes::SlotHashes;
 use steel::*;
 
-pub fn process_sample(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResult {
+pub fn process_sample(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResult {
     // Load accounts.
     let clock = Clock::get()?;
     let [signer_info, var_info, slot_hashes_sysvar] = accounts else {

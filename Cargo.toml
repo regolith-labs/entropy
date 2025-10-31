@@ -6,9 +6,10 @@ members = ["api", "program"]
 version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
-homepage = ""
-documentation = ""
-repository = ""
+homepage = "https://ore.supply/entropy"
+description = "Secure random number generator on Solana."
+documentation = "https://docs.rs/entropy-api/latest/entropy_api/"
+repository = "https://github.com/regolith-labs/entropy"
 readme = "./README.md"
 keywords = ["solana"]
 

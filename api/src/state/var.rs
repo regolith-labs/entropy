@@ -8,6 +8,9 @@ pub struct Var {
     /// The creator of the variable.
     pub authority: Pubkey,
 
+    /// The provider of the entropy data.
+    pub provider: Pubkey,
+
     /// The commit provided by Entropy provider.
     pub commit: [u8; 32],
 

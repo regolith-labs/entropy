@@ -12,10 +12,11 @@ pub fn process_open(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResult 
     let commit = args.commit;
 
     // Load accounts.
-    let [authority_info, provider_info, var_info, system_program] = accounts else {
+    let [authority_info, payer_info, provider_info, var_info, system_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
     authority_info.is_signer()?;
+    payer_info.is_signer()?;
     // provider_info.is_signer()?;
     var_info.is_empty()?.is_writable()?;
     system_program.is_program(&system_program::ID)?;
@@ -30,7 +31,7 @@ pub fn process_open(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResult 
     create_program_account::<Var>(
         var_info,
         system_program,
-        authority_info,
+        payer_info,
         &entropy_api::ID,
         &[VAR, &authority_info.key.to_bytes(), &id.to_le_bytes()],
     )?;

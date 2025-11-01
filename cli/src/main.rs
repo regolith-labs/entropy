@@ -61,6 +61,7 @@ async fn open(
     let clock = get_clock(rpc).await?;
     let ix = entropy_api::sdk::open(
         payer.pubkey(),
+        payer.pubkey(),
         id,
         ENTROPY_PROVIDER,
         commit.to_bytes(),

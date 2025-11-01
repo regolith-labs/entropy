@@ -4,6 +4,7 @@ use crate::prelude::*;
 
 pub fn open(
     signer: Pubkey,
+    payer: Pubkey,
     id: u64,
     provider: Pubkey,
     commit: [u8; 32],
@@ -15,6 +16,7 @@ pub fn open(
         program_id: crate::ID,
         accounts: vec![
             AccountMeta::new(signer, true),
+            AccountMeta::new(payer, true),
             AccountMeta::new(provider, false),
             AccountMeta::new(var_pda(signer, id).0, false),
             AccountMeta::new_readonly(system_program::ID, false),

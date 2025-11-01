@@ -5,9 +5,10 @@ pub fn process_open(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResult 
     // Parse args.
     let clock = Clock::get()?;
     let args = Open::try_from_bytes(data)?;
-    let samples = args.samples;
-    let end_at = args.end_at;
-    let is_auto = args.is_auto;
+    let id = u64::from_le_bytes(args.id);
+    let samples = u64::from_le_bytes(args.samples);
+    let end_at = u64::from_le_bytes(args.end_at);
+    let is_auto = u64::from_le_bytes(args.is_auto);
     let commit = args.commit;
 
     // Load accounts.
@@ -15,7 +16,7 @@ pub fn process_open(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResult 
         return Err(ProgramError::NotEnoughAccountKeys);
     };
     authority_info.is_signer()?;
-    provider_info.is_signer()?;
+    // provider_info.is_signer()?;
     var_info.is_empty()?.is_writable()?;
     system_program.is_program(&system_program::ID)?;
 
@@ -31,10 +32,11 @@ pub fn process_open(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResult 
         system_program,
         authority_info,
         &entropy_api::ID,
-        &[VAR, &authority_info.key.to_bytes()],
+        &[VAR, &authority_info.key.to_bytes(), &id.to_le_bytes()],
     )?;
     let var = var_info.as_account_mut::<Var>(&entropy_api::ID)?;
     var.authority = *authority_info.key;
+    var.id = id;
     var.provider = *provider_info.key;
     var.commit = commit;
     var.seed = [0; 32];

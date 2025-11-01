@@ -9,8 +9,7 @@ pub fn process_close(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResul
     signer_info.is_signer()?;
     var_info
         .as_account_mut::<Var>(&entropy_api::ID)?
-        .assert_mut_msg(|v| v.authority == *signer_info.key, "Invalid var authority")?
-        .assert_mut_msg(|v| v.samples == 0, "Samples remaining")?;
+        .assert_mut_msg(|v| v.authority == *signer_info.key, "Invalid var authority")?;
     system_program.is_program(&system_program::ID)?;
 
     // Close var account.

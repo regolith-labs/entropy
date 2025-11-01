@@ -1,5 +1,5 @@
 use entropy_api::prelude::*;
-use solana_program::slot_hashes::SlotHashes;
+use solana_program::{log::sol_log, slot_hashes::SlotHashes};
 use steel::*;
 
 pub fn process_sample(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResult {
@@ -22,8 +22,19 @@ pub fn process_sample(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResu
     // Record the sampled slot hash.
     if let Some(slot_hash) = slot_hashes.get(&var.end_at) {
         var.slot_hash = slot_hash.to_bytes();
+        sol_log(&format!(
+            "Sampled hash at slot {:?}: {:?}",
+            var.end_at,
+            slot_hash.to_string()
+        ));
     } else {
-        var.slot_hash = solana_program::keccak::hashv(&[&var.end_at.to_le_bytes()]).to_bytes();
+        let hash = solana_program::keccak::hashv(&[&var.end_at.to_le_bytes()]);
+        var.slot_hash = hash.to_bytes();
+        sol_log(&format!(
+            "No hash for slot {:?}. Generated: {:?}",
+            var.end_at,
+            hash.to_string()
+        ));
     }
 
     Ok(())

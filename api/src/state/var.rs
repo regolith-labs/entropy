@@ -8,6 +8,9 @@ pub struct Var {
     /// The creator of the variable.
     pub authority: Pubkey,
 
+    /// The id of the variable.
+    pub id: u64,
+
     /// The provider of the entropy data.
     pub provider: Pubkey,
 

@@ -3,12 +3,14 @@ mod next;
 mod open;
 mod reveal;
 mod sample;
+mod update;
 
 use close::*;
 use next::*;
 use open::*;
 use reveal::*;
 use sample::*;
+use update::*;
 
 use entropy_api::prelude::*;
 use steel::*;
@@ -26,6 +28,13 @@ pub fn process_instruction(
         EntropyInstruction::Next => process_next(accounts, data)?,
         EntropyInstruction::Reveal => process_reveal(accounts, data)?,
         EntropyInstruction::Sample => process_sample(accounts, data)?,
+        EntropyInstruction::Update => process_update(accounts, data)?,
+        // _ => {
+        //     return Err(trace(
+        //         "Invalid instruction",
+        //         ProgramError::InvalidInstructionData,
+        //     ))
+        // }
     }
 
     Ok(())

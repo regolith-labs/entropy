@@ -2,6 +2,14 @@ use steel::*;
 
 use crate::prelude::*;
 
+pub fn close(signer: Pubkey, var: Pubkey) -> Instruction {
+    Instruction {
+        program_id: crate::ID,
+        accounts: vec![AccountMeta::new(signer, true), AccountMeta::new(var, false)],
+        data: Close {}.to_bytes(),
+    }
+}
+
 pub fn open(
     signer: Pubkey,
     payer: Pubkey,
@@ -37,17 +45,6 @@ pub fn next(signer: Pubkey, var: Pubkey, end_at: u64) -> Instruction {
         program_id: crate::ID,
         accounts: vec![AccountMeta::new(signer, true), AccountMeta::new(var, false)],
         data: Next {
-            end_at: end_at.to_le_bytes(),
-        }
-        .to_bytes(),
-    }
-}
-
-pub fn update(signer: Pubkey, var: Pubkey, end_at: u64) -> Instruction {
-    Instruction {
-        program_id: crate::ID,
-        accounts: vec![AccountMeta::new(signer, true), AccountMeta::new(var, false)],
-        data: Update {
             end_at: end_at.to_le_bytes(),
         }
         .to_bytes(),

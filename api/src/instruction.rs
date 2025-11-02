@@ -8,7 +8,6 @@ pub enum EntropyInstruction {
     Next = 2,
     Reveal = 4,
     Sample = 5,
-    Update = 6,
 }
 
 #[repr(C)]
@@ -50,15 +49,8 @@ pub struct Reveal {
 #[derive(Clone, Copy, Debug, Pod, Zeroable)]
 pub struct Sample {}
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Pod, Zeroable)]
-pub struct Update {
-    pub end_at: [u8; 8],
-}
-
 instruction!(EntropyInstruction, Open);
 instruction!(EntropyInstruction, Close);
 instruction!(EntropyInstruction, Next);
 instruction!(EntropyInstruction, Reveal);
 instruction!(EntropyInstruction, Sample);
-instruction!(EntropyInstruction, Update);

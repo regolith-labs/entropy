@@ -15,8 +15,12 @@ pub fn process_reveal(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResul
     let var = var_info
         .as_account_mut::<Var>(&entropy_api::ID)?
         .assert_mut_msg(|v| clock.slot >= v.end_at, "Not ready to reveal")?
-        .assert_mut_msg(|v| v.slot_hash != [0; 32], "Slot hash not sampled")?
-        .assert_mut_msg(|v| v.value == [0; 32], "Value is already set")?;
+        .assert_mut_msg(|v| v.slot_hash != [0; 32], "Slot hash not sampled")?;
+
+    // Silent return.
+    if var.seed != [0; 32] {
+        return Ok(());
+    }
 
     // Validate the seed.
     if !var.is_valid(seed) {

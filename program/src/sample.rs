@@ -11,9 +11,13 @@ pub fn process_sample(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResu
     signer_info.is_signer()?;
     let var = var_info
         .as_account_mut::<Var>(&entropy_api::ID)?
-        .assert_mut(|v| clock.slot >= v.end_at)?
-        .assert_mut(|v| v.slot_hash == [0; 32])?;
+        .assert_mut(|v| clock.slot >= v.end_at)?;
     slot_hashes_sysvar.is_sysvar(&sysvar::slot_hashes::ID)?;
+
+    // Silent return.
+    if var.slot_hash != [0; 32] {
+        return Ok(());
+    }
 
     // Deserialize the slot hashes.
     let slot_hashes =

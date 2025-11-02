@@ -15,7 +15,7 @@ pub fn process_next(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResult 
     let var = var_info
         .as_account_mut::<Var>(&entropy_api::ID)?
         .assert_mut_msg(|v| v.authority == *signer_info.key, "Invalid var authority")?
-        .assert_mut_msg(|v| clock.slot >= v.end_at, "Not ready to next")?
+        .assert_mut_msg(|v| clock.slot > v.end_at, "Not ready to next")?
         .assert_mut_msg(|v| v.slot_hash != [0; 32], "Slot hash not sampled")?
         .assert_mut_msg(|v| v.seed != [0; 32], "Seed not revealed")?
         .assert_mut_msg(|v| v.value != [0; 32], "Value is not finalized")?

@@ -42,11 +42,25 @@ async fn main() {
         "crank" => {
             crank(&rpc, &payer).await.unwrap();
         }
+        "close" => {
+            close(&rpc, &payer).await.unwrap();
+        }
         "var" => {
             log_var(&rpc).await.unwrap();
         }
         _ => panic!("Invalid command"),
     };
+}
+
+async fn close(
+    rpc: &RpcClient,
+    payer: &solana_sdk::signer::keypair::Keypair,
+) -> Result<(), anyhow::Error> {
+    let address = std::env::var("ADDRESS").unwrap();
+    let address = Pubkey::from_str(&address).expect("Invalid ADDRESS");
+    let ix = entropy_api::sdk::close(payer.pubkey(), address);
+    submit_transaction(rpc, payer, &[ix]).await?;
+    Ok(())
 }
 
 async fn open(
@@ -100,12 +114,14 @@ async fn crank(
     let url = format!("https://entropy-api.onrender.com/var/{}/seed", address);
     let response = reqwest::get(&url).await?;
     let seed_response: entropy_types::response::GetSeedResponse = response.json().await?;
+    println!("Seed: {:?}", seed_response.seed);
 
     // Build the instructions
     let sample_ix = entropy_api::sdk::sample(payer.pubkey(), address);
     let reveal_ix = entropy_api::sdk::reveal(payer.pubkey(), address, seed_response.seed);
-    let next_ix = entropy_api::sdk::next(payer.pubkey(), address, clock.slot + 150);
-    submit_transaction(rpc, payer, &[sample_ix, reveal_ix, next_ix]).await?;
+    // let next_ix = entropy_api::sdk::next(payer.pubkey(), address, clock.slot + 150);
+    // submit_transaction(rpc, payer, &[sample_ix, reveal_ix, next_ix]).await?;
+    submit_transaction(rpc, payer, &[sample_ix, reveal_ix]).await?;
     Ok(())
 }
 

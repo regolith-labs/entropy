@@ -153,6 +153,8 @@ fn print_var(var: &Var) {
         "  Value: {:?}",
         keccak::Hash::new_from_array(var.value).to_string()
     );
+    println!("  Start at: {:?}", var.start_at);
+    println!("  End at: {:?}", var.end_at);
     println!("  Samples: {:?}", var.samples);
     println!("  Is auto: {:?}", var.is_auto);
 }

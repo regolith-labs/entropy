@@ -1,7 +1,5 @@
 # Entropy [WIP]
 
-### ⚠️ CAUTION This code is a work-in-progress. 
-
 **Entropy** is a provably-fair random number generation protocol for Solana. It uses an commit-reveal scheme paired with slothash sampling strategy to generate random numbers onchain in a secure and cost-effective way.
 
 ## How it works

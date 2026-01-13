@@ -40,6 +40,31 @@ pub struct Var {
 }
 
 impl Var {
+    pub fn finalize(&mut self, seed: [u8; 32]) -> ProgramResult {
+        // Silent return.
+        if self.seed != [0; 32] {
+            return Ok(());
+        }
+
+        // Validate the seed.
+        if !self.is_valid(seed) {
+            return Err(trace("Invalid seed", ProgramError::InvalidInstructionData));
+        }
+
+        // Record the revealed seed.
+        self.seed = seed;
+
+        // Finalize the value.
+        self.value = solana_program::keccak::hashv(&[
+            &self.slot_hash,
+            &self.seed,
+            &self.samples.to_le_bytes(),
+        ])
+        .to_bytes();
+
+        Ok(())
+    }
+
     pub fn is_valid(&self, seed: [u8; 32]) -> bool {
         if self.slot_hash == [0; 32] {
             return false;

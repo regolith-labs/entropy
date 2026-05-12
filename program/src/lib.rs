@@ -1,6 +1,8 @@
+mod close;
 mod init;
 mod sample;
 
+use close::*;
 use init::*;
 use sample::*;
 
@@ -18,6 +20,7 @@ pub fn process_instruction(
     match ix {
         EntropyInstruction::Init => process_init(accounts, data)?,
         EntropyInstruction::Sample => process_sample(accounts, data)?,
+        EntropyInstruction::Close => process_close(accounts, data)?,
     }
 
     Ok(())

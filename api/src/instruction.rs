@@ -5,6 +5,7 @@ use steel::*;
 pub enum EntropyInstruction {
     Init = 0,
     Sample = 1,
+    Close = 2,
 }
 
 #[repr(C)]
@@ -15,5 +16,10 @@ pub struct Init {}
 #[derive(Clone, Copy, Debug, Pod, Zeroable)]
 pub struct Sample {}
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+pub struct Close {}
+
 instruction!(EntropyInstruction, Init);
 instruction!(EntropyInstruction, Sample);
+instruction!(EntropyInstruction, Close);

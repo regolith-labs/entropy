@@ -1271,6 +1271,7 @@ version = "0.1.6"
 dependencies = [
  "base64 0.21.7",
  "entropy-api",
+ "fixed",
  "rand 0.8.5",
  "solana-program",
  "solana-program-test",

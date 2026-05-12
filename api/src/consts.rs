@@ -4,7 +4,14 @@ use steel::*;
 pub const VAR: &[u8] = b"var";
 
 /// The number of Pyth price feeds used for the entropy hash.
-pub const NUM_FEEDS: usize = 28;
+pub const NUM_FEEDS: usize = 32;
+
+/// EWMA half-life in slots (~1 minute at 400ms/slot).
+pub const HALFLIFE: u64 = 150;
+
+/// Minimum threshold floor in basis points (1 = 0.01%).
+pub const MIN_BPS: u64 = 1;
+
 
 /// Pyth price feed tickers (matches FEED_ADDRESSES order).
 pub const FEED_TICKERS: [&str; NUM_FEEDS] = [
@@ -12,6 +19,7 @@ pub const FEED_TICKERS: [&str; NUM_FEEDS] = [
     "AAPL", "SPY", "TSLA", "NVDA", "GOOGL", "MSFT", "META",
     "AMZN", "XAU", "XAG", "EUR", "GBP", "JPY", "AUD",
     "MSTR", "PLTR", "HOOD", "RKLB", "CRWD", "LLY", "AVGO",
+    "BONK", "WIF", "RNDR", "SUI",
 ];
 
 /// Pyth price feed addresses (order must match FEED_TICKERS).
@@ -44,4 +52,9 @@ pub const FEED_ADDRESSES: [Pubkey; NUM_FEEDS] = [
     solana_program::pubkey!("8zWQVp313FFdanpZoQeDohp5HE7ugoJE2VaX4sYPHj4e"), // CRWD/USD
     solana_program::pubkey!("AmhgzXb37V3YegqdXoDTGL5QVhSV83dESyadboJwc7sQ"), // LLY/USD
     solana_program::pubkey!("2jgfs5FsDQkdCrgcCKHEd7p9KNtKAyWznMSyu21WbFgS"), // AVGO/USD
+    // TODO: Verify these 4 Pyth pull oracle addresses on mainnet before deploying
+    solana_program::pubkey!("DBE3N8uNjhKPRHfANdwGvCZghWXyLPdqdSbEW2XFwBiX"), // BONK/USD
+    solana_program::pubkey!("6ABgrEZk8urs6kJ1JNdC1sspH5zKXRqxy8sg3ZG2cQps"), // WIF/USD
+    solana_program::pubkey!("AnLf8tVYCM816gmBjiy8n53eXKKEDydT5piYjjQDPgTB"), // RNDR/USD
+    solana_program::pubkey!("3Qub3HaAJaa2xNY7SUqPKd3vVwTqDfDDkEUMPjXD2c1q"), // SUI/USD
 ];

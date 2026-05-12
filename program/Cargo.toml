@@ -15,6 +15,7 @@ crate-type = ["cdylib", "lib"]
 
 [dependencies]
 entropy-api.workspace = true
+fixed = "1.28"
 solana-program.workspace = true
 solana-security-txt.workspace = true
 steel.workspace = true

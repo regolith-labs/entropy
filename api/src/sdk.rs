@@ -14,6 +14,17 @@ pub fn init(payer: Pubkey) -> Instruction {
     }
 }
 
+pub fn close(signer: Pubkey) -> Instruction {
+    Instruction {
+        program_id: crate::ID,
+        accounts: vec![
+            AccountMeta::new(signer, true),
+            AccountMeta::new(var_pda().0, false),
+        ],
+        data: Close {}.to_bytes(),
+    }
+}
+
 pub fn sample(signer: Pubkey) -> Instruction {
     let mut accounts = vec![
         AccountMeta::new(signer, true),

@@ -22,3 +22,4 @@ If you do not receive a response from hardhatchad@gmail.com please followup with
 the team directly. You can do this in the `#general` channel of the
 [ORE discord server](https://discord.com/invite/4TQfshAAsT), by pinging the `Team`
 role in the channel and referencing the fact that you submitted a security problem.
+

@@ -32,7 +32,7 @@ This means the bit only flips when the price moved **more than expected** for th
 |-----------|-------|---------|
 | NUM_FEEDS | 32 | Pyth feeds (crypto, metals, forex) |
 | HALFLIFE | 150 slots | ~1 minute EWMA decay |
-| SENSITIVITY | 0.15 (15/100) | Std dev multiplier for flip threshold |
+| SENSITIVITY | 0.1 (1/10) | Std dev multiplier for flip threshold |
 | MIN_BPS | 1 | 0.01% minimum threshold floor |
 | K | 2 | Binary discretization (up/down) |
 
@@ -130,14 +130,14 @@ The threshold at a given SENSITIVITY for BTC (std dev ≈ $40/slot, dt=150):
 | 1.0 | ~$490 | ~196x | ~32% |
 | 0.5 | ~$245 | ~98x | ~62% |
 | 0.25 | ~$122 | ~49x | ~80% |
-| **0.15** | **~$73** | **~29x** | **~88%** |
-| 0.1 | ~$49 | ~20x | ~92% |
+| 0.15 | ~$73 | ~29x | ~88% |
+| **0.1** | **~$49** | **~20x** | **~92%** |
 | 0.05 | ~$24 | ~10x | ~96% |
 | 0.01 | ~$4.9 | ~2x | ~99% |
 
-**We chose SENSITIVITY = 0.15** because:
-- ~88% of feeds flip per sample → strong entropy generation
-- ~29x safety margin → a publisher would need 29x more influence than they actually have to flip a bit, which would require corrupting a majority of all publishers on that feed
+**We chose SENSITIVITY = 0.1** because:
+- ~92% of feeds flip per sample → strong entropy generation
+- ~20x safety margin → a publisher would need 20x more influence than they actually have to flip a bit, which would require corrupting a majority of all publishers on that feed
 - Well above the danger zone (SENSITIVITY < 0.01) where the threshold approaches publisher influence
 
 **When to adjust:**

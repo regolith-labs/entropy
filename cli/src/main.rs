@@ -25,6 +25,7 @@ use tokio_stream::StreamExt;
 
 const PYTH_PRICE_OFFSET: usize = 73;
 const PYTH_EXPONENT_OFFSET: usize = 89;
+const PYTH_PUBLISH_TIME_OFFSET: usize = 93;
 
 // TODO: Create new LUT after deploying with 32 feeds and update this address.
 const LUT_ADDRESS: solana_sdk::pubkey::Pubkey =
@@ -106,6 +107,7 @@ async fn main() {
 struct WatchState {
     var_data: Option<Vec<u8>>,
     feed_prices: [i64; NUM_FEEDS],
+    feed_publish_times: [i64; NUM_FEEDS],
 }
 
 async fn watch(rpc: &RpcClient) {
@@ -120,6 +122,7 @@ async fn watch(rpc: &RpcClient) {
     let state = Arc::new(Mutex::new(WatchState {
         var_data: None,
         feed_prices: [0i64; NUM_FEEDS],
+        feed_publish_times: [0i64; NUM_FEEDS],
     }));
 
     // Load initial var account
@@ -130,8 +133,12 @@ async fn watch(rpc: &RpcClient) {
     // Load initial feed prices
     for i in 0..NUM_FEEDS {
         if let Ok(account) = rpc.get_account(&FEED_ADDRESSES[i]).await {
+            let mut s = state.lock().unwrap();
             if let Some(price) = parse_pyth_price_from_bytes(&account.data) {
-                state.lock().unwrap().feed_prices[i] = price;
+                s.feed_prices[i] = price;
+            }
+            if let Some(ts) = parse_pyth_publish_time(&account.data) {
+                s.feed_publish_times[i] = ts;
             }
         }
     }
@@ -187,10 +194,15 @@ async fn watch(rpc: &RpcClient) {
                             Ok((mut stream, _unsub)) => {
                                 while let Some(response) = stream.next().await {
                                     if let Some(data) = response.value.data.decode() {
+                                        let mut s = state_feed.lock().unwrap();
                                         if let Some(price) = parse_pyth_price_from_bytes(&data) {
-                                            state_feed.lock().unwrap().feed_prices[i] = price;
-                                            render_dashboard(&state_feed.lock().unwrap());
+                                            s.feed_prices[i] = price;
                                         }
+                                        if let Some(ts) = parse_pyth_publish_time(&data) {
+                                            s.feed_publish_times[i] = ts;
+                                        }
+                                        render_dashboard(&s);
+                                        drop(s);
                                     }
                                 }
                             }
@@ -246,11 +258,16 @@ fn render_dashboard(state: &WatchState) {
     let mut projected_bits = var.bits;
     let mut flips: u32 = 0;
 
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64;
+
     println!(
-        "{:<6} {:>14} {:>14} {:>10} {:>10}  {}",
-        "FEED", "LAST SAMPLE", "LIVE PRICE", "STD DEV", "THRESHOLD", "BIT"
+        "{:<8} {:>14} {:>14} {:>10} {:>10}  {} {:>6}",
+        "FEED", "LAST SAMPLE", "LIVE PRICE", "STD DEV", "THRESHOLD", "BIT", "AGE"
     );
-    println!("{}", "-".repeat(75));
+    println!("{}", "-".repeat(82));
 
     for i in 0..NUM_FEEDS {
         let live_price = state.feed_prices[i];
@@ -260,15 +277,18 @@ fn render_dashboard(state: &WatchState) {
 
         let bit = (projected_bits >> i) & 1;
 
+        let age = format_age(now, state.feed_publish_times[i]);
+
         if live_price <= 0 {
             println!(
-                "{:<6} {:>14} {:>14} {:>10} {:>10}  {}",
+                "{:<8} {:>14} {:>14} {:>10} {:>10}  {} {:>6}",
                 FEED_TICKERS[i],
                 format_price_short(prev_price),
                 "---",
                 "---",
                 "---",
-                bit
+                bit,
+                age
             );
             continue;
         }
@@ -305,13 +325,14 @@ fn render_dashboard(state: &WatchState) {
         let flip_marker = if would_flip { " FLIP" } else { "" };
 
         println!(
-            "{:<6} {:>14} {:>14} {:>10} {:>10}  {}{}",
+            "{:<8} {:>14} {:>14} {:>10} {:>10}  {} {:>6}{}",
             FEED_TICKERS[i],
             format_price_short(prev_price),
             format_price_short(live_price),
             format_num(std_dev),
             format_num(threshold),
             bit_display,
+            age,
             flip_marker,
         );
     }
@@ -328,6 +349,10 @@ fn render_dashboard(state: &WatchState) {
     println!(
         "Projected 1/25:  {}",
         u32::from_le_bytes(projected_hash.0[0..4].try_into().unwrap()) % 25
+    );
+    println!(
+        "Projected 1/625: {}",
+        u32::from_le_bytes(projected_hash.0[4..8].try_into().unwrap()) % 625
     );
 }
 
@@ -347,6 +372,40 @@ fn format_num(v: I80F48) -> String {
         format!("{:.2}", n)
     } else {
         format!("{:.4}", n)
+    }
+}
+
+fn format_age(now: i64, publish_time: i64) -> String {
+    if publish_time == 0 {
+        return "---".to_string();
+    }
+    let age = now - publish_time;
+    if age < 0 {
+        "0s".to_string()
+    } else if age < 60 {
+        format!("{}s", age)
+    } else if age < 3600 {
+        format!("{}m", age / 60)
+    } else if age < 86400 {
+        format!("{}h", age / 3600)
+    } else {
+        format!("{}d", age / 86400)
+    }
+}
+
+fn parse_pyth_publish_time(data: &[u8]) -> Option<i64> {
+    if data.len() < PYTH_PUBLISH_TIME_OFFSET + 8 {
+        return None;
+    }
+    let ts = i64::from_le_bytes(
+        data[PYTH_PUBLISH_TIME_OFFSET..PYTH_PUBLISH_TIME_OFFSET + 8]
+            .try_into()
+            .ok()?,
+    );
+    if ts > 1_000_000_000 && ts < 2_000_000_000 {
+        Some(ts)
+    } else {
+        None
     }
 }
 

@@ -82,10 +82,11 @@ pub fn process_sample(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResu
         }
         var.variances[i] = Numeric::from_i80f48(new_var);
 
-        // Threshold = max(sqrt(variance) * sqrt(dt), |prev| * MIN_BPS / 10_000)
+        // Threshold = max(MULT * sqrt(variance) * sqrt(dt), |prev| * MIN_BPS / 10_000)
         let std_dev = new_var.sqrt();
         let sqrt_dt = dt_f.sqrt();
-        let vol_threshold = std_dev * sqrt_dt;
+        let sensitivity = I80F48::from_num(SENSITIVITY_NUM) / I80F48::from_num(SENSITIVITY_DENOM);
+        let vol_threshold = sensitivity * std_dev * sqrt_dt;
 
         let prev_abs = I80F48::from_num(prev.unsigned_abs());
         let min_threshold = prev_abs * I80F48::from_num(MIN_BPS) / I80F48::from_num(10_000u64);

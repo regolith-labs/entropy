@@ -10,8 +10,13 @@ keywords.workspace = true
 publish = false
 
 [dependencies]
+crossterm = "0.28"
 entropy-api.workspace = true
+fixed = "1.28"
+solana-account-decoder.workspace = true
 solana-client.workspace = true
+solana-pubsub-client = "2.1"
 solana-sdk.workspace = true
 steel.workspace = true
 tokio.workspace = true
+tokio-stream = "0.1"

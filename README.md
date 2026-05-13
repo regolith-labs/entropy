@@ -15,7 +15,7 @@
 The threshold for each feed is:
 
 ```
-threshold = max(sqrt(variance_per_slot) * sqrt(dt), price * MIN_BPS / 10_000)
+threshold = max(SENSITIVITY * sqrt(variance_per_slot) * sqrt(dt), price * MIN_BPS / 10_000)
 ```
 
 Where:
@@ -30,10 +30,10 @@ This means the bit only flips when the price moved **more than expected** for th
 
 | Parameter | Value | Meaning |
 |-----------|-------|---------|
-| NUM_FEEDS | 32 | Pyth feeds (crypto, equities, forex, commodities) |
+| NUM_FEEDS | 32 | Pyth feeds (crypto, metals, forex) |
 | HALFLIFE | 150 slots | ~1 minute EWMA decay |
+| SENSITIVITY | 0.15 (15/100) | Std dev multiplier for flip threshold |
 | MIN_BPS | 1 | 0.01% minimum threshold floor |
-| MIN_FLIPS | 8 | Minimum bits that must change per sample |
 | K | 2 | Binary discretization (up/down) |
 
 ## Security Analysis
@@ -44,7 +44,7 @@ The adversary is a Pyth publisher (or coalition) who can influence the reported 
 
 ### Why Discretization (K=2) Matters
 
-With raw continuous prices, shifting a price by $0.01 would produce a completely different hash — giving the attacker millions of candidate hashes for free. With K=2 binary discretization plus EWMA thresholds, the attacker must move the price beyond 1 standard deviation of natural volatility to flip a single bit. This is the difference between **free manipulation** and **costly manipulation**.
+With raw continuous prices, shifting a price by $0.01 would produce a completely different hash — giving the attacker millions of candidate hashes for free. With K=2 binary discretization plus EWMA thresholds, the attacker must move the price beyond `SENSITIVITY` standard deviations of natural volatility to flip a single bit. This is the difference between **free manipulation** and **costly manipulation**.
 
 With K=2 and m controlled feeds, the attacker's search space is exactly **2^m** candidate hashes.
 
@@ -112,6 +112,38 @@ Expected cost: reputation_damage + staking_slash_risk + legal_exposure
 ```
 
 For established publishers, the cost vastly exceeds any plausible gain from manipulating a mining lottery. The residual risk is from small/marginal publishers or bribery — bounded by the 2x structural cap.
+
+### Tuning SENSITIVITY
+
+`SENSITIVITY` controls how much price movement is required to flip a bit, expressed as a fraction of the feed's historical standard deviation. Lower values = more sensitive (more bits flip per sample) but the threshold gets closer to what a publisher can manipulate.
+
+**The hard constraint:** The threshold must exceed a single publisher's maximum influence on the aggregate price. With ~20 publishers per major feed using a weighted median, one publisher can shift the aggregate by roughly:
+
+```
+max_influence ≈ confidence_interval / num_publishers ≈ $2.50 (for BTC)
+```
+
+The threshold at a given SENSITIVITY for BTC (std dev ≈ $40/slot, dt=150):
+
+| SENSITIVITY | Threshold | Safety margin vs publisher | P(flip per feed) |
+|------|-----------|--------------------------|------------------|
+| 1.0 | ~$490 | ~196x | ~32% |
+| 0.5 | ~$245 | ~98x | ~62% |
+| 0.25 | ~$122 | ~49x | ~80% |
+| **0.15** | **~$73** | **~29x** | **~88%** |
+| 0.1 | ~$49 | ~20x | ~92% |
+| 0.05 | ~$24 | ~10x | ~96% |
+| 0.01 | ~$4.9 | ~2x | ~99% |
+
+**We chose SENSITIVITY = 0.15** because:
+- ~88% of feeds flip per sample → strong entropy generation
+- ~29x safety margin → a publisher would need 29x more influence than they actually have to flip a bit, which would require corrupting a majority of all publishers on that feed
+- Well above the danger zone (SENSITIVITY < 0.01) where the threshold approaches publisher influence
+
+**When to adjust:**
+- If Pyth adds significantly more publishers per feed, you could safely lower SENSITIVITY (the safety margin scales with publisher count)
+- If feed count drops below 20 active, consider raising SENSITIVITY to compensate for less entropy diversity
+- If the protocol secures higher-value outcomes (smaller effective P), raise SENSITIVITY to widen the safety margin
 
 ## Account Layout
 

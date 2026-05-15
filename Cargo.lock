@@ -1270,7 +1270,7 @@ dependencies = [
 
 [[package]]
 name = "entropy-api"
-version = "0.1.6"
+version = "0.2.0-alpha"
 dependencies = [
  "bytemuck",
  "num_enum",
@@ -1281,7 +1281,7 @@ dependencies = [
 
 [[package]]
 name = "entropy-cli"
-version = "0.1.6"
+version = "0.2.0-alpha"
 dependencies = [
  "crossterm",
  "entropy-api",
@@ -1297,11 +1297,10 @@ dependencies = [
 
 [[package]]
 name = "entropy-program"
-version = "0.1.6"
+version = "0.2.0-alpha"
 dependencies = [
  "base64 0.21.7",
  "entropy-api",
- "fixed",
  "rand 0.8.5",
  "solana-program",
  "solana-program-test",
@@ -6290,13 +6289,14 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "steel"
-version = "4.0.2"
+version = "4.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8aacdf8cc9261c6c801c5cfdf7ddc427d299665899d0612389841ba9920c4065"
+checksum = "410bbe96d1e8b5a6c3719cc70f36f3afe7b92a21d91da8e48fcf199ae6a03a5a"
 dependencies = [
  "bytemuck",
  "fixed",
  "num_enum",
+ "serde",
  "solana-program",
  "spl-associated-token-account 6.0.0",
  "spl-token 4.0.2",

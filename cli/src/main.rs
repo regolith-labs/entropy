@@ -76,7 +76,7 @@ async fn main() {
                 "  value:     {}",
                 solana_sdk::keccak::Hash::new_from_array(var.value)
             );
-            println!("  sample_at: {}", var.sample_at);
+            println!("  update_at: {}", var.update_at);
             println!("  bits:      0b{:032b}", var.bits);
             println!("  prices:");
             for i in 0..NUM_FEEDS {
@@ -250,7 +250,7 @@ fn render_dashboard(state: &WatchState) {
         "On-chain value:  {}",
         solana_sdk::keccak::Hash::new_from_array(var.value)
     );
-    println!("Sample slot:     {}", var.sample_at);
+    println!("Update slot:     {}", var.update_at);
     println!("Current bits:    0b{:032b}", var.bits);
     println!();
 
@@ -299,8 +299,7 @@ fn render_dashboard(state: &WatchState) {
         let sqrt_dt = dt_f.sqrt();
         let vol_threshold = std_dev * sqrt_dt;
         let prev_abs = I80F48::from_num(prev_price.unsigned_abs());
-        let min_threshold =
-            prev_abs * I80F48::from_num(MIN_BPS) / I80F48::from_num(10_000u64);
+        let min_threshold = prev_abs * I80F48::from_num(MIN_BPS) / I80F48::from_num(10_000u64);
         let threshold = if vol_threshold > min_threshold {
             vol_threshold
         } else {
@@ -342,10 +341,7 @@ fn render_dashboard(state: &WatchState) {
     println!();
     println!("Projected flips: {}", flips);
     println!("Projected bits:  0b{:032b}", projected_bits);
-    println!(
-        "Projected value: {}",
-        projected_hash
-    );
+    println!("Projected value: {}", projected_hash);
     println!(
         "Projected 1/25:  {}",
         u32::from_le_bytes(projected_hash.0[0..4].try_into().unwrap()) % 25
@@ -413,9 +409,16 @@ fn parse_pyth_price_from_bytes(data: &[u8]) -> Option<i64> {
     if data.len() < PYTH_EXPONENT_OFFSET + 4 {
         return None;
     }
-    let price = i64::from_le_bytes(data[PYTH_PRICE_OFFSET..PYTH_PRICE_OFFSET + 8].try_into().ok()?);
-    let exponent =
-        i32::from_le_bytes(data[PYTH_EXPONENT_OFFSET..PYTH_EXPONENT_OFFSET + 4].try_into().ok()?);
+    let price = i64::from_le_bytes(
+        data[PYTH_PRICE_OFFSET..PYTH_PRICE_OFFSET + 8]
+            .try_into()
+            .ok()?,
+    );
+    let exponent = i32::from_le_bytes(
+        data[PYTH_EXPONENT_OFFSET..PYTH_EXPONENT_OFFSET + 4]
+            .try_into()
+            .ok()?,
+    );
     normalize_price(price, exponent)
 }
 

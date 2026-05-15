@@ -1,5 +1,4 @@
 use entropy_api::prelude::*;
-use fixed::types::I80F48;
 use solana_program::{keccak, log::sol_log};
 use steel::*;
 
@@ -21,16 +20,16 @@ pub fn process_sample(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResu
 
     let clock = Clock::get()?;
     let slot = clock.slot;
-    let first_sample = var.sample_at == 0;
+    let first_sample = var.update_at == 0;
 
-    let dt = slot.saturating_sub(var.sample_at).max(1);
-    let dt_f = I80F48::from_num(dt);
+    let dt = slot.saturating_sub(var.update_at).max(1);
+    let dt_n = Numeric::from_u64(dt);
 
     // Alpha = min(dt / HALFLIFE, 1.0)
     let alpha = if dt >= HALFLIFE {
-        I80F48::ONE
+        Numeric::ONE
     } else {
-        I80F48::from_num(dt) / I80F48::from_num(HALFLIFE)
+        Numeric::from_u64(dt) / Numeric::from_u64(HALFLIFE)
     };
 
     let mut bits = var.bits;
@@ -69,27 +68,26 @@ pub fn process_sample(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResu
         }
 
         let prev = var.prices[i];
-        let dp = price - prev;
-        let dp_f = I80F48::from_num(dp);
+        let dp = Numeric::from_i64(price - prev);
 
         // EWMA variance update: variance = lerp(old, observed, alpha)
-        let dp_sq = dp_f.saturating_mul(dp_f);
-        let observed_var = dp_sq / dt_f;
-        let old_var = var.variances[i].to_i80f48();
+        let dp_sq = dp * dp;
+        let observed_var = dp_sq / dt_n;
+        let old_var = var.variances[i];
         let mut new_var = old_var + alpha * (observed_var - old_var);
         if new_var.is_negative() {
-            new_var = I80F48::ZERO;
+            new_var = Numeric::ZERO;
         }
-        var.variances[i] = Numeric::from_i80f48(new_var);
+        var.variances[i] = new_var;
 
         // Threshold = max(MULT * sqrt(variance) * sqrt(dt), |prev| * MIN_BPS / 10_000)
         let std_dev = new_var.sqrt();
-        let sqrt_dt = dt_f.sqrt();
-        let sensitivity = I80F48::from_num(SENSITIVITY_NUM) / I80F48::from_num(SENSITIVITY_DENOM);
+        let sqrt_dt = dt_n.sqrt();
+        let sensitivity = Numeric::from_fraction(SENSITIVITY_NUM, SENSITIVITY_DENOM);
         let vol_threshold = sensitivity * std_dev * sqrt_dt;
 
-        let prev_abs = I80F48::from_num(prev.unsigned_abs());
-        let min_threshold = prev_abs * I80F48::from_num(MIN_BPS) / I80F48::from_num(10_000u64);
+        let prev_abs = Numeric::from_u64(prev.unsigned_abs());
+        let min_threshold = prev_abs * Numeric::from_u64(MIN_BPS) / Numeric::from_u64(10_000);
 
         let threshold = if vol_threshold > min_threshold {
             vol_threshold
@@ -100,7 +98,7 @@ pub fn process_sample(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResu
         // Flip bit if |dp| > threshold.
         // Count all threshold crossings, not just bit-value changes,
         // because the initial bit assignment is arbitrary.
-        let dp_abs = I80F48::from_num(dp.unsigned_abs());
+        let dp_abs = dp.abs();
         let flipped = dp_abs > threshold;
         if flipped {
             flips += 1;
@@ -116,8 +114,8 @@ pub fn process_sample(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResu
             "{}: {} var={} thr={} {}",
             FEED_TICKERS[i],
             format_price(price),
-            format_fixed(std_dev),
-            format_fixed(threshold),
+            format_numeric(std_dev),
+            format_numeric(threshold),
             if flipped { "FLIP" } else { "-" }
         ));
 
@@ -130,7 +128,7 @@ pub fn process_sample(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResu
 
     var.bits = bits;
     var.value = hash.to_bytes();
-    var.sample_at = slot;
+    var.update_at = slot;
 
     sol_log(&format!("flips: {}", flips));
     sol_log(&format!("bits: 0b{:032b}", bits));
@@ -146,11 +144,10 @@ fn format_price(price: i64) -> String {
     format!("${}.{:08}", whole, frac)
 }
 
-/// Formats an I80F48 as a decimal string (truncated to 2 places).
-fn format_fixed(v: I80F48) -> String {
-    let int_part = v.to_num::<i64>();
-    let frac_part = ((v - I80F48::from_num(int_part)).abs() * I80F48::from_num(100))
-        .to_num::<u64>();
+/// Formats a Numeric as a decimal string (truncated to 2 places).
+fn format_numeric(v: Numeric) -> String {
+    let int_part = v.to_i64();
+    let frac_part = ((v - Numeric::from_i64(int_part)).abs() * Numeric::from_u64(100)).to_u64();
     format!("{}.{:02}", int_part, frac_part)
 }
 

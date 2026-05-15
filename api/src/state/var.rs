@@ -9,8 +9,8 @@ pub struct Var {
     /// The current random hash value.
     pub value: [u8; 32],
 
-    /// The slot the sample was taken at.
-    pub sample_at: u64,
+    /// The slot the var was updated at.
+    pub update_at: u64,
 
     /// Current bit state (1 bit per feed).
     pub bits: u32,

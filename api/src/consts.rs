@@ -6,8 +6,8 @@ pub const VAR: &[u8] = b"var";
 /// The number of Pyth price feeds used for the entropy hash.
 pub const NUM_FEEDS: usize = 32;
 
-/// EWMA half-life in slots (~1 minute at 400ms/slot).
-pub const HALFLIFE: u64 = 150;
+/// EWMA half-life in slots (~30 minutes at 400ms/slot).
+pub const HALFLIFE: u64 = 4_500;
 
 /// Minimum threshold floor in basis points (1 = 0.01%).
 pub const MIN_BPS: u64 = 1;

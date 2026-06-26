@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["api", "cli", "program"]
+members = ["api", "program"]
 
 [workspace.package]
 version = "0.1.6"
@@ -26,6 +26,6 @@ solana-sdk = "^2.1"
 spl-associated-token-account = { version = "6.0", features = ["no-entrypoint"] }
 spl-token = { version = "4.0", features = ["no-entrypoint"] }
 solana-program = "2.1"
-steel = { version = "4.0.2", features = ["spl"] }
+steel = { version = "4.0.9", features = ["spl"] }
 thiserror = "1.0"
 tokio = { version = "1.37.0", features = ["full"] }
